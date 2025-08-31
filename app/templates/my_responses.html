@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-white pb-20">
+    <!-- Header with Role Selector -->
+    <div class="bg-blue-500">
+        <div class="max-w-md mx-auto px-4 py-4">
+            <div class="bg-white rounded-lg p-1">
+                <div class="flex">
+                    <button class="flex-1 py-2 px-4 text-sm font-medium bg-blue-500 text-white rounded-md">
+                        Заказчик
+                    </button>
+                    <button class="flex-1 py-2 px-4 text-sm font-medium text-gray-600 rounded-md">
+                        Исполнитель
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Title -->
+    <div class="max-w-md mx-auto px-4 py-4">
+        <h1 class="text-lg font-semibold text-gray-900">Архив</h1>
+    </div>
+
+    <!-- Tasks List -->
+    <div class="max-w-md mx-auto px-4">
+        <div x-data="myResponses()" class="space-y-3">
+            <!-- Loading State -->
+            <div x-show="loading" class="text-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400 mx-auto mb-4"></div>
+                <p class="text-gray-500">Загрузка...</p>
+            </div>
+
+            <!-- Tasks -->
+            <div x-show="!loading" class="space-y-3">
+                <template x-for="project in customerProjects" :key="project.id">
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-lg font-bold text-gray-900" x-text="project.price ? project.price + ' ₽' : 'По договоренности'"></span>
+                                    <div x-show="project.photos && project.photos.length > 0" class="flex items-center space-x-1">
+                                        <i class="fas fa-camera text-gray-500 text-sm"></i>
+                                        <span class="text-gray-500 text-sm" x-text="project.photos.length"></span>
+                                    </div>
+                                </div>
+                                
+                                <h3 class="font-semibold text-gray-900 mb-2" x-text="getCategoryLabel(project.service_category)"></h3>
+                                <p class="text-gray-900 mb-3" x-text="project.description"></p>
+                                
+                                <div class="space-y-2 text-sm text-gray-600">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="ri-map-pin-line text-gray-400"></i>
+                                        <span x-text="project.address"></span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <i class="ri-calendar-line text-gray-400"></i>
+                                        <span x-text="formatDate(project.date)"></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
+                                    <span x-text="formatDate(project.created_at) + ' ' + formatTime(project.created_at)"></span>
+                                    <span x-text="project.responses_count + ' отклик' + (project.responses_count !== 1 ? 'ов' : '')"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Empty State -->
+                <div x-show="!loading && customerProjects.length === 0" class="text-center py-8">
+                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="ri-folder-open-line text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-500 mb-2">У вас пока нет проектов</h3>
+                    <p class="text-gray-400">Создайте первую задачу</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        <div class="max-w-md mx-auto">
+            <div class="flex justify-around items-center py-3">
+                <a href="/search" class="flex flex-col items-center space-y-1">
+                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
+                        <i class="ri-search-line text-gray-600 text-sm"></i>
+                    </div>
+                </a>
+                
+                <a href="/create-task" class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                    <i class="ri-add-line text-white text-lg"></i>
+                </a>
+                
+                <a href="/profile" class="flex flex-col items-center space-y-1">
+                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
+                        <i class="ri-user-line text-gray-600 text-sm"></i>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function myResponses() {
+    return {
+        loading: false,
+        customerProjects: [],
+
+        async init() {
+            await this.loadCustomerProjects();
+        },
+
+        async loadCustomerProjects() {
+            try {
+                this.loading = true;
+                const token = localStorage.getItem('auth_token');
+                if (!token) return;
+
+                const response = await fetch('/api/v1/tasks/tasks', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const projects = await response.json();
+                    this.customerProjects = projects;
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        getCategoryLabel(category) {
+            const labels = {
+                'movers': 'Грузчики, грузоперевозки',
+                'computer_help': 'Компьютерная помощь',
+                'beauty_health': 'Красота, здоровье',
+                'handyman': 'Мастер на час',
+                'household_help': 'Помощь в хозяйстве',
+                'laborers': 'Разнорабочие',
+                'appliance_repair': 'Ремонт бытовой техники',
+                'construction': 'Ремонт и строительство',
+                'tutoring': 'Репетиторы, обучение',
+                'plumbing': 'Сантехника',
+                'furniture': 'Сборка и ремонт мебели',
+                'cleaning': 'Уборка, клининг',
+                'electrical': 'Электрика',
+                'legal': 'Юридическая помощь',
+                'other': 'Другое'
+            };
+            return labels[category] || category;
+        },
+
+        formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU');
+        },
+
+        formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-100">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <button @click="window.history.back()" class="text-gray-500 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-arrow-left text-lg"></i>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-800">Просмотр задачи</h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="refreshTask()" class="text-gray-500 hover:text-green-600 transition-colors">
+                        <i class="fas fa-sync-alt text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 py-6">
+        <div x-data="taskView()" class="space-y-6">
+            <!-- Task Details -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <!-- Loading State -->
+                <div x-show="loading" class="text-center py-12">
+                    <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-4"></div>
+                    <p class="text-gray-500">Загрузка задачи...</p>
+                </div>
+
+                <!-- Task Content -->
+                <div x-show="!loading && task" class="space-y-0">
+                    <!-- Task Photos -->
+                    <div x-show="task.photos && task.photos.length > 0" class="relative">
+                        <div class="h-64 bg-gradient-to-br from-green-100 to-blue-100">
+                            <img :src="task.photos[0]" :alt="'Фото задачи'" class="w-full h-full object-cover">
+                        </div>
+                        <div x-show="task.photos.length > 1" class="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                            <i class="fas fa-images mr-1"></i>
+                            <span x-text="task.photos.length + ' фото'"></span>
+                        </div>
+                    </div>
+                    
+                    <div x-show="!task.photos || task.photos.length === 0" class="h-48 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
+                        <i class="fas fa-image text-6xl text-gray-300"></i>
+                    </div>
+
+                    <!-- Task Info -->
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full" x-text="getCategoryLabel(task.service_category)"></span>
+                                    <span :class="getStatusClass(task.status)" class="px-3 py-1 rounded-full text-xs font-medium" x-text="getStatusLabel(task.status)"></span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-3" x-text="task.description"></h2>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold text-green-600" x-text="task.price ? task.price + ' ₽' : 'По договоренности'"></div>
+                                <div class="text-sm text-gray-500 mt-1" x-text="task.responses_count + ' откликов'"></div>
+                            </div>
+                        </div>
+
+                        <!-- Task Details Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                        <i class="fas fa-map-marker-alt text-green-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Адрес</p>
+                                        <p class="font-medium text-gray-800" x-text="task.address"></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                        <i class="fas fa-calendar text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Дата выполнения</p>
+                                        <p class="font-medium text-gray-800" x-text="formatDate(task.date)"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                        <i class="fas fa-clock text-purple-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Размещено</p>
+                                        <p class="font-medium text-gray-800" x-text="formatDate(task.created_at)"></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                        <i class="fas fa-user text-indigo-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Заказчик</p>
+                                        <p class="font-medium text-gray-800" x-text="maskPhone(task.customer_phone)"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-4">
+                            <button @click="respondToTask()" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105">
+                                <i class="fas fa-reply mr-2"></i>Откликнуться
+                            </button>
+                            <button @click="shareTask()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all duration-300">
+                                <i class="fas fa-share mr-2"></i>Поделиться
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div x-show="!loading && !task" class="text-center py-12">
+                    <div class="w-24 h-24 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-exclamation-triangle text-3xl text-red-500"></i>
+                    </div>
+                    <h3 class="text-xl font-medium text-gray-500 mb-2">Задача не найдена</h3>
+                    <p class="text-gray-400">Попробуйте вернуться назад</p>
+                </div>
+            </div>
+
+            <!-- Responses Section -->
+            <div x-show="!loading && task" class="bg-white rounded-2xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Отклики на задачу</h3>
+                
+                <!-- Loading Responses -->
+                <div x-show="loadingResponses" class="text-center py-8">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p class="text-gray-500">Загрузка откликов...</p>
+                </div>
+
+                <!-- Responses List -->
+                <div x-show="!loadingResponses" class="space-y-4">
+                    <template x-for="response in responses" :key="response.id">
+                        <div class="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-300">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <p class="font-medium text-gray-800" x-text="maskPhone(response.performer_phone)"></p>
+                                        <span class="text-lg font-bold text-green-600" x-text="response.offer_price + ' ₽'"></span>
+                                    </div>
+                                    <p x-show="response.message" class="text-sm text-gray-600" x-text="response.message"></p>
+                                    <p class="text-xs text-gray-500 mt-2" x-text="'Отправлено: ' + formatDate(response.created_at)"></p>
+                                </div>
+                                <span :class="getResponseStatusClass(response.status)" class="px-3 py-1 rounded-full text-xs font-medium" x-text="getResponseStatusLabel(response.status)"></span>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Empty Responses -->
+                    <div x-show="!loadingResponses && responses.length === 0" class="text-center py-8">
+                        <div class="w-20 h-20 bg-gradient-to-br from-blue-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-reply text-2xl text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-500 mb-2">Пока нет откликов</h3>
+                        <p class="text-gray-400">Будьте первым, кто откликнется на эту задачу</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function taskView() {
+    return {
+        loading: true,
+        loadingResponses: false,
+        task: null,
+        responses: [],
+
+        async init() {
+            await this.loadTask();
+            if (this.task) {
+                await this.loadResponses();
+            }
+        },
+
+        async loadTask() {
+            try {
+                const taskId = this.getTaskIdFromUrl();
+                if (!taskId) {
+                    this.loading = false;
+                    return;
+                }
+
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const response = await fetch(`/api/v1/tasks/tasks/${taskId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    this.task = await response.json();
+                } else {
+                    console.error('Error loading task');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadResponses() {
+            try {
+                this.loadingResponses = true;
+                const taskId = this.getTaskIdFromUrl();
+                const token = localStorage.getItem('auth_token');
+
+                const response = await fetch(`/api/v1/tasks/tasks/${taskId}/responses`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    this.responses = await response.json();
+                }
+            } catch (error) {
+                console.error('Error loading responses:', error);
+            } finally {
+                this.loadingResponses = false;
+            }
+        },
+
+        getTaskIdFromUrl() {
+            const pathParts = window.location.pathname.split('/');
+            return pathParts[pathParts.length - 1];
+        },
+
+        async refreshTask() {
+            this.loading = true;
+            await this.loadTask();
+            if (this.task) {
+                await this.loadResponses();
+            }
+        },
+
+        respondToTask() {
+            window.location.href = `/respond/${this.getTaskIdFromUrl()}`;
+        },
+
+        shareTask() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Задача: ' + this.task.description,
+                    text: this.task.description,
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Ссылка скопирована в буфер обмена');
+            }
+        },
+
+        getCategoryLabel(category) {
+            const labels = {
+                'movers': 'Грузчики',
+                'computer_help': 'Компьютеры',
+                'beauty_health': 'Красота',
+                'handyman': 'Мастер',
+                'household_help': 'Хозяйство',
+                'laborers': 'Разнорабочие',
+                'appliance_repair': 'Техника',
+                'construction': 'Строительство',
+                'tutoring': 'Обучение',
+                'plumbing': 'Сантехника',
+                'furniture': 'Мебель',
+                'cleaning': 'Уборка',
+                'electrical': 'Электрика',
+                'legal': 'Юридические',
+                'other': 'Другое'
+            };
+            return labels[category] || category;
+        },
+
+        getStatusClass(status) {
+            const classes = {
+                'open': 'bg-green-100 text-green-700',
+                'in_progress': 'bg-blue-100 text-blue-700',
+                'completed': 'bg-gray-100 text-gray-700',
+                'cancelled': 'bg-red-100 text-red-700'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        },
+
+        getStatusLabel(status) {
+            const labels = {
+                'open': 'Открыт',
+                'in_progress': 'В работе',
+                'completed': 'Завершен',
+                'cancelled': 'Отменен'
+            };
+            return labels[status] || status;
+        },
+
+        getResponseStatusClass(status) {
+            const classes = {
+                'accepted': 'bg-green-100 text-green-700',
+                'rejected': 'bg-red-100 text-red-700',
+                'pending': 'bg-yellow-100 text-yellow-700'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        },
+
+        getResponseStatusLabel(status) {
+            const labels = {
+                'accepted': 'Принят',
+                'rejected': 'Отклонен',
+                'pending': 'На рассмотрении'
+            };
+            return labels[status] || status;
+        },
+
+        formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU');
+        },
+
+        maskPhone(phone) {
+            if (!phone) return '';
+            return phone.replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3-$4-$5');
+        }
+    }
+}
+</script>
+{% endblock %}

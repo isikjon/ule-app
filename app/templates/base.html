@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile App Auth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(59, 140, 77, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(59, 140, 77, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(59, 140, 77, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(59, 140, 77, 0.2);
+            box-shadow: 
+                0 8px 32px rgba(59, 140, 77, 0.1),
+                0 4px 16px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 20px 40px rgba(59, 140, 77, 0.15),
+                0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+
+        .input-focus:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 140, 77, 0.2);
+            border-color: #3b8c4d;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #3b8c4d 0%, #2d6b3a 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-gradient:hover::before {
+            left: 100%;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #2d6b3a 0%, #1f4a28 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(59, 140, 77, 0.4);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .animate-bounce-in {
+            animation: bounceIn 0.8s ease-out;
+        }
+
+        .animate-pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite alternate;
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 20px rgba(59, 140, 77, 0.3); }
+            100% { box-shadow: 0 0 30px rgba(59, 140, 77, 0.6); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .phone-input {
+            position: relative;
+        }
+
+        .phone-input input {
+            padding-left: 3rem;
+        }
+
+        .phone-prefix {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #3b8c4d;
+            font-weight: 600;
+            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .password-toggle {
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            color: #3b8c4d;
+            transform: scale(1.1);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        
+        .logo {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 16px;
+            box-shadow: 
+                0 8px 25px rgba(59, 140, 77, 0.3),
+                0 4px 15px rgba(59, 140, 77, 0.2);
+            transition: all 0.3s ease;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .logo:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 
+                0 15px 35px rgba(59, 140, 77, 0.4),
+                0 8px 20px rgba(59, 140, 77, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #ee5a52 0%, #d63031 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .input-field {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #3b8c4d, #2d6b3a) border-box;
+        }
+
+        .input-field:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 140, 77, 0.2);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div id="app" class="w-full max-w-md animate-fade-in">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Phone mask functionality
+            function initPhoneMask(input) {
+                let cursorPosition = 0;
+                
+                input.addEventListener('input', function(e) {
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    
+                    // Получаем только цифры из введенного значения
+                    let digits = this.value.replace(/\D/g, '');
+                    
+                    // Ограничиваем до 10 цифр (без учета +7)
+                    if (digits.length > 10) {
+                        digits = digits.slice(0, 10);
+                    }
+                    
+                    // Форматируем номер
+                    let formatted = '';
+                    if (digits.length > 0) {
+                        if (digits.length <= 3) {
+                            formatted = digits;
+                        } else if (digits.length <= 6) {
+                            formatted = digits.slice(0, 3) + ' ' + digits.slice(3);
+                        } else if (digits.length <= 8) {
+                            formatted = digits.slice(0, 3) + ' ' + digits.slice(3, 6) + '-' + digits.slice(6);
+                        } else if (digits.length <= 10) {
+                            formatted = digits.slice(0, 3) + ' ' + digits.slice(3, 6) + '-' + digits.slice(6, 8) + '-' + digits.slice(8, 10);
+                        }
+                    }
+                    
+                    // Устанавливаем отформатированное значение
+                    this.value = formatted;
+                    
+                    // Восстанавливаем позицию курсора
+                    if (start === end) {
+                        // Если курсор был в конце, ставим его в конец отформатированного текста
+                        if (start >= this.value.length) {
+                            this.setSelectionRange(this.value.length, this.value.length);
+                        } else {
+                            // Иначе пытаемся сохранить примерную позицию
+                            let newPosition = start;
+                            if (start > 0 && this.value[start - 1] === ' ' || this.value[start - 1] === '-') {
+                                newPosition = start + 1;
+                            }
+                            this.setSelectionRange(newPosition, newPosition);
+                        }
+                    } else {
+                        // Если был выделен текст, ставим курсор в конец
+                        this.setSelectionRange(this.value.length, this.value.length);
+                    }
+                });
+                
+                // Предотвращаем вставку недопустимых символов
+                input.addEventListener('keypress', function(e) {
+                    if (!/\d/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
+                        e.preventDefault();
+                    }
+                });
+                
+                // Обработка вставки текста
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    const digits = pastedText.replace(/\D/g, '').slice(0, 10);
+                    
+                    if (digits.length > 0) {
+                        this.value = this.value.replace(/\D/g, '') + digits;
+                        this.dispatchEvent(new Event('input'));
+                    }
+                });
+                
+                // Обработка удаления
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' || e.key === 'Delete') {
+                        const start = this.selectionStart;
+                        const end = this.selectionEnd;
+                        
+                        if (start === end) {
+                            // Если курсор на разделителе, перемещаем его назад
+                            if (e.key === 'Backspace' && (this.value[start - 1] === ' ' || this.value[start - 1] === '-')) {
+                                e.preventDefault();
+                                this.setSelectionRange(start - 1, start - 1);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Initialize phone mask for all phone inputs
+            document.querySelectorAll('input[type="tel"]').forEach(initPhoneMask);
+
+            // Password toggle functionality
+            document.querySelectorAll('.password-toggle').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const input = this.previousElementSibling;
+                    const icon = this.querySelector('i');
+                    
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-white pb-20">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-200">
+        <div class="max-w-md mx-auto px-4 py-4">
+            <div class="flex items-center space-x-3">
+                <button @click="window.history.back()" class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
+                    <i class="ri-arrow-left-line text-gray-600 text-sm"></i>
+                </button>
+                <h1 class="text-lg font-semibold text-gray-900">Уведомления</h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Permission Banner -->
+    <div class="max-w-md mx-auto px-4 py-4">
+        <div class="bg-blue-100 rounded-lg p-4 mb-6">
+            <h3 class="font-semibold text-gray-900 mb-2">Вы запретили присылать вам уведомления</h3>
+            <p class="text-gray-600 text-sm mb-4">Разрешите отправку push уведомлений в настройках приложения или нажмите на кнопку разрешить</p>
+            <button class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-medium">
+                Разрешить
+            </button>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="max-w-md mx-auto px-4">
+        <div x-data="notifications()" class="space-y-3">
+            <!-- Loading State -->
+            <div x-show="loading" class="text-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400 mx-auto mb-4"></div>
+                <p class="text-gray-500">Загрузка...</p>
+            </div>
+
+            <!-- Notifications -->
+            <div x-show="!loading" class="space-y-3">
+                <template x-for="notification in notifications" :key="notification.id">
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2" x-text="notification.title"></h4>
+                        <p class="text-gray-600 text-sm mb-2" x-text="notification.message"></p>
+                        <p class="text-xs text-gray-500" x-text="formatDate(notification.created_at)"></p>
+                    </div>
+                </template>
+
+                <!-- Empty State -->
+                <div x-show="!loading && notifications.length === 0" class="text-center py-8">
+                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="ri-notification-3-line text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-500 mb-2">Уведомлений пока нет</h3>
+                    <p class="text-gray-400">Здесь будут появляться важные сообщения</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        <div class="max-w-md mx-auto">
+            <div class="flex justify-around items-center py-3">
+                <a href="/search" class="flex flex-col items-center space-y-1">
+                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
+                        <i class="ri-search-line text-gray-600 text-sm"></i>
+                    </div>
+                </a>
+                
+                <a href="/my-responses" class="flex flex-col items-center space-y-1">
+                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
+                        <i class="ri-list-check text-gray-600 text-sm"></i>
+                    </div>
+                </a>
+                
+                <a href="/profile" class="flex flex-col items-center space-y-1">
+                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
+                        <i class="ri-user-line text-gray-600 text-sm"></i>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function notifications() {
+    return {
+        loading: false,
+        notifications: [],
+
+        async init() {
+            await this.loadNotifications();
+        },
+
+        async loadNotifications() {
+            try {
+                this.loading = true;
+                const token = localStorage.getItem('auth_token');
+                if (!token) return;
+
+                const response = await fetch('/api/v1/tasks/notifications', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.notifications = data;
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        }
+    }
+}
+</script>
+{% endblock %}

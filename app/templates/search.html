@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-100">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <button @click="window.history.back()" class="text-gray-500 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-arrow-left text-lg"></i>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-800">Поиск задач</h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="refreshTasks()" class="text-gray-500 hover:text-green-600 transition-colors">
+                        <i class="fas fa-sync-alt text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="max-w-6xl mx-auto px-4 py-6">
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="relative">
+                    <input
+                        x-model="searchQuery"
+                        type="text"
+                        placeholder="Поиск по описанию..."
+                        class="w-full px-4 py-3 pl-10 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
+                    >
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <div class="relative">
+                    <select x-model="selectedCategory" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 appearance-none pr-10">
+                        <option value="">Все категории</option>
+                        <option value="movers">Грузчики, грузоперевозки</option>
+                        <option value="computer_help">Компьютерная помощь</option>
+                        <option value="beauty_health">Красота, здоровье</option>
+                        <option value="handyman">Мастер на час</option>
+                        <option value="household_help">Помощь в хозяйстве</option>
+                        <option value="laborers">Разнорабочие</option>
+                        <option value="appliance_repair">Ремонт бытовой техники</option>
+                        <option value="construction">Ремонт и строительство</option>
+                        <option value="tutoring">Репетиторы, обучение</option>
+                        <option value="plumbing">Сантехника</option>
+                        <option value="furniture">Сборка и ремонт мебели</option>
+                        <option value="cleaning">Уборка, клининг</option>
+                        <option value="electrical">Электрика</option>
+                        <option value="legal">Юридическая помощь</option>
+                        <option value="other">Другое</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                </div>
+                <div class="relative">
+                    <select x-model="sortBy" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 appearance-none pr-10">
+                        <option value="newest">Сначала новые</option>
+                        <option value="oldest">Сначала старые</option>
+                        <option value="price_low">По цене (возрастание)</option>
+                        <option value="price_high">По цене (убывание)</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks List -->
+        <div x-data="searchTasks()" class="space-y-4">
+            <!-- Loading State -->
+            <div x-show="loading" class="text-center py-12">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-4"></div>
+                <p class="text-gray-500">Загрузка задач...</p>
+            </div>
+
+            <!-- Tasks Grid -->
+            <div x-show="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="task in filteredTasks" :key="task.id">
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <!-- Task Image -->
+                        <div class="h-48 bg-gradient-to-br from-green-100 to-blue-100 rounded-t-2xl flex items-center justify-center">
+                            <template x-if="task.photos && task.photos.length > 0">
+                                <img :src="task.photos[0]" class="w-full h-full object-cover rounded-t-2xl">
+                            </template>
+                            <template x-if="!task.photos || task.photos.length === 0">
+                                <i class="fas fa-image text-4xl text-gray-300"></i>
+                            </template>
+                        </div>
+
+                        <!-- Task Content -->
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full" x-text="getCategoryLabel(task.service_category)"></span>
+                                <span class="text-lg font-bold text-gray-800" x-text="task.price ? task.price + ' ₽' : 'По договоренности'"></span>
+                            </div>
+                            
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2 line-clamp-2" x-text="task.description"></h3>
+                            
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-map-marker-alt w-4 text-green-500 mr-2"></i>
+                                    <span x-text="task.address"></span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-calendar w-4 text-blue-500 mr-2"></i>
+                                    <span x-text="formatDate(task.date)"></span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-comments w-4 text-purple-500 mr-2"></i>
+                                    <span x-text="task.responses_count + ' откликов'"></span>
+                                </div>
+                            </div>
+
+                            <div class="flex space-x-3">
+                                <button @click="viewTask(task.id)" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105">
+                                    <i class="fas fa-eye mr-2"></i>Просмотр
+                                </button>
+                                <button @click="respondToTask(task)" class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105">
+                                    <i class="fas fa-reply mr-2"></i>Откликнуться
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty State -->
+            <div x-show="!loading && filteredTasks.length === 0" class="text-center py-12">
+                <div class="w-24 h-24 bg-gradient-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-search text-3xl text-gray-400"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-500 mb-2">Задачи не найдены</h3>
+                <p class="text-gray-400">Попробуйте изменить параметры поиска</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function searchTasks() {
+    return {
+        tasks: [],
+        loading: true,
+        searchQuery: '',
+        selectedCategory: '',
+        sortBy: 'newest',
+
+        get filteredTasks() {
+            let filtered = this.tasks.filter(task => {
+                const matchesSearch = !this.searchQuery || 
+                    task.description.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                    task.address.toLowerCase().includes(this.searchQuery.toLowerCase());
+                
+                const matchesCategory = !this.selectedCategory || 
+                    task.service_category === this.selectedCategory;
+                
+                return matchesSearch && matchesCategory;
+            });
+
+            // Sorting
+            switch (this.sortBy) {
+                case 'newest':
+                    filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    break;
+                case 'oldest':
+                    filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                    break;
+                case 'price_low':
+                    filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+                    break;
+                case 'price_high':
+                    filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+                    break;
+            }
+
+            return filtered;
+        },
+
+        async init() {
+            await this.loadTasks();
+        },
+
+        async loadTasks() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('Не авторизован');
+                }
+
+                const response = await fetch('/api/v1/tasks/tasks/available', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.tasks = data;
+                } else {
+                    console.error('Error loading tasks');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async refreshTasks() {
+            this.loading = true;
+            await this.loadTasks();
+        },
+
+        getCategoryLabel(category) {
+            const labels = {
+                'movers': 'Грузчики',
+                'computer_help': 'Компьютеры',
+                'beauty_health': 'Красота',
+                'handyman': 'Мастер',
+                'household_help': 'Хозяйство',
+                'laborers': 'Разнорабочие',
+                'appliance_repair': 'Техника',
+                'construction': 'Строительство',
+                'tutoring': 'Обучение',
+                'plumbing': 'Сантехника',
+                'furniture': 'Мебель',
+                'cleaning': 'Уборка',
+                'electrical': 'Электрика',
+                'legal': 'Юридические',
+                'other': 'Другое'
+            };
+            return labels[category] || category;
+        },
+
+        formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU');
+        },
+
+        viewTask(taskId) {
+            window.location.href = `/task/${taskId}`;
+        },
+
+        respondToTask(task) {
+            window.location.href = `/respond/${task.id}`;
+        }
+    }
+}
+</script>
+
+<style>
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
+{% endblock %}
