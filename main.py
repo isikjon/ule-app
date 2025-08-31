@@ -2,11 +2,20 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 from app.auth.api import router as auth_router
 from app.tasks.api import router as tasks_router
 from app.web.routes import router as web_router
 
-app = FastAPI(title="Mobile App API", version="1.0.0")
+app = FastAPI(title="ULE Platform API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://ylebb.ru", "https://ylebb.ru", "http://www.ylebb.ru", "https://www.ylebb.ru"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -22,4 +31,8 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"} 
+    return {"status": "healthy", "domain": "ylebb.ru"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
