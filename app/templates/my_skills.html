@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div x-data="mySkills()" class="glass-card rounded-3xl p-8 shadow-2xl animate-bounce-in">
+<div x-data="mySkills()" class="glass-card rounded-3xl p-8 shadow-2xl animate-bounce-in pb-20">
     <!-- Header -->
     <div class="text-center mb-8">
         <div class="logo-container">
@@ -30,30 +30,7 @@
         </template>
     </div>
 
-    <!-- Additional Info -->
-    <div class="mt-8 space-y-4">
-        <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">Описание ваших услуг</label>
-            <textarea
-                x-model="description"
-                rows="3"
-                class="input-focus w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-200 resize-none"
-                placeholder="Расскажите о своем опыте и специализации..."
-            ></textarea>
-        </div>
 
-        <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">Почасовая ставка (₽)</label>
-            <input
-                x-model="hourlyRate"
-                type="number"
-                min="0"
-                step="50"
-                class="input-focus w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-200"
-                placeholder="0"
-            >
-        </div>
-    </div>
 
     <!-- Save Button -->
     <div class="mt-8">
@@ -71,7 +48,7 @@
 
     <!-- Back Button -->
     <div class="mt-6 text-center">
-        <button @click="goBack()" class="text-gray-500 hover:text-gray-700 transition-colors">
+        <button onclick="window.goBackToProfile('performer')" class="text-gray-500 hover:text-gray-700 transition-colors">
             <i class="fas fa-arrow-left mr-2"></i>Назад
         </button>
     </div>
@@ -113,8 +90,6 @@ function mySkills() {
             { value: 'legal', label: 'Юридическая помощь', selected: false },
             { value: 'other', label: 'Другое', selected: false }
         ],
-        description: '',
-        hourlyRate: null,
         loading: false,
         success: '',
         error: '',
@@ -124,13 +99,28 @@ function mySkills() {
         },
 
         async init() {
+            console.log('Initializing my-skills page...');
+            const token = localStorage.getItem('auth_token');
+            console.log('Token on init:', token ? token.substring(0, 20) + '...' : 'No token');
+            
+            if (!token) {
+                console.error('No auth token found, redirecting to login');
+                this.error = 'Не авторизован. Пожалуйста, войдите в систему.';
+                return;
+            }
+            
             await this.loadCurrentSkills();
         },
 
         async loadCurrentSkills() {
             try {
                 const token = localStorage.getItem('auth_token');
-                if (!token) return;
+                console.log('Loading skills - Token:', token ? token.substring(0, 20) + '...' : 'No token');
+                
+                if (!token) {
+                    console.warn('No token found, skipping skills loading');
+                    return; // Просто не загружаем навыки, если нет токена
+                }
 
                 const response = await fetch('/api/v1/tasks/service-offer', {
                     headers: {
@@ -140,18 +130,30 @@ function mySkills() {
 
                 if (response.ok) {
                     const data = await response.json();
-                    this.description = data.description || '';
-                    this.hourlyRate = data.hourly_rate || null;
+                    console.log('Loaded skills data:', data);
                     
                     // Mark selected skills
-                    if (data.service_categories) {
+                    if (data.service_categories && Array.isArray(data.service_categories)) {
                         this.skills.forEach(skill => {
                             skill.selected = data.service_categories.includes(skill.value);
                         });
                     }
+                } else if (response.status === 404) {
+                    // Если нет данных, оставляем все навыки невыбранными
+                    console.log('No existing skills found, starting fresh');
+                } else if (response.status === 401) {
+                    console.error('Token invalid, clearing localStorage');
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_data');
+                    this.error = 'Сессия истекла. Пожалуйста, войдите заново.';
+                } else {
+                    console.error('Error loading skills:', response.status, response.statusText);
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Error details:', errorData);
                 }
             } catch (error) {
                 console.error('Error loading skills:', error);
+                this.error = 'Ошибка загрузки навыков: ' + error.message;
             }
         },
 
@@ -166,17 +168,18 @@ function mySkills() {
                     throw new Error('Не авторизован');
                 }
 
+                const requestData = {
+                    service_categories: this.selectedSkills
+                };
+                console.log('Sending skills data:', requestData);
+
                 const response = await fetch('/api/v1/tasks/service-offer', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({
-                        service_categories: this.selectedSkills,
-                        description: this.description,
-                        hourly_rate: this.hourlyRate
-                    })
+                    body: JSON.stringify(requestData)
                 });
 
                 if (response.ok) {
@@ -186,20 +189,55 @@ function mySkills() {
                         this.success = '';
                     }, 3000);
                 } else {
-                    const data = await response.json();
-                    this.error = data.detail || 'Ошибка сохранения навыков';
+                    try {
+                        const data = await response.json();
+                        if (data.detail) {
+                            if (typeof data.detail === 'string') {
+                                this.error = data.detail;
+                            } else if (data.detail.message) {
+                                this.error = data.detail.message;
+                            } else {
+                                this.error = 'Ошибка валидации данных';
+                            }
+                        } else {
+                            this.error = `Ошибка ${response.status}: ${response.statusText}`;
+                        }
+                    } catch (parseError) {
+                        this.error = `Ошибка ${response.status}: ${response.statusText}`;
+                    }
                 }
             } catch (error) {
                 this.error = 'Ошибка сети. Попробуйте позже.';
             } finally {
                 this.loading = false;
             }
-        },
-
-        goBack() {
-            window.history.back();
         }
     }
 }
 </script>
+
+<!-- Bottom Navigation Bar -->
+<div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+    <div class="max-w-md mx-auto">
+        <div class="flex justify-around items-center py-3">
+            <a href="/search" class="flex flex-col items-center space-y-1">
+                <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
+                    <i class="ri-search-line text-gray-600 text-sm"></i>
+                </div>
+                <span class="text-xs text-gray-600">Поиск</span>
+            </a>
+            
+            <a href="/create-task" class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                <i class="ri-add-line text-white text-lg"></i>
+            </a>
+            
+            <a href="/profile" class="flex flex-col items-center space-y-1">
+                <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
+                    <i class="ri-user-line text-gray-600 text-sm"></i>
+                </div>
+                <span class="text-xs text-gray-600">Профиль</span>
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}

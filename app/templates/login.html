@@ -40,7 +40,7 @@
                     placeholder="Введите пароль"
                     required
                 >
-                <button type="button" class="password-toggle absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <button type="button" class="password-toggle text-gray-400">
                     <i class="fas fa-eye-slash"></i>
                 </button>
             </div>
@@ -120,13 +120,29 @@ function loginForm() {
                 });
 
                 const data = await response.json();
+                console.log('Login response:', data);
 
                 if (data.success) {
                     this.success = data.message;
-                    localStorage.setItem('auth_token', data.token);
+                    console.log('Login successful, received token:', data.token ? data.token.substring(0, 20) + '...' : 'No token received');
+                    
+                    if (data.token) {
+                        localStorage.setItem('auth_token', data.token);
+                        console.log('Token saved to localStorage');
+                        
+                        // Проверяем, что токен сохранился
+                        const savedToken = localStorage.getItem('auth_token');
+                        console.log('Verification - Token in localStorage:', savedToken ? savedToken.substring(0, 20) + '...' : 'Failed to save token');
+                    } else {
+                        console.error('No token received from server!');
+                        this.error = 'Сервер не вернул токен авторизации';
+                        this.loading = false;
+                        return;
+                    }
                     
                     if (data.user) {
                         localStorage.setItem('user_data', JSON.stringify(data.user));
+                        console.log('User data saved:', data.user);
                     }
 
                     // Redirect after success
@@ -134,6 +150,7 @@ function loginForm() {
                         window.location.href = '/dashboard';
                     }, 1500);
                 } else {
+                    console.error('Login failed:', data);
                     this.error = data.detail || 'Ошибка входа';
                 }
             } catch (error) {

@@ -5,8 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth.api import router as auth_router
 from app.tasks.api import router as tasks_router
 from app.web.routes import router as web_router
+from app.database import create_tables
 
 app = FastAPI(title="ULE Platform API", version="1.0.0")
+
+@app.on_event("startup")
+async def startup_event():
+    print("🗄️ Инициализация базы данных...")
+    create_tables()
+    print("✅ База данных готова!")
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,4 +39,5 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8102) 
+    

@@ -33,6 +33,16 @@ class LoginRequest(BaseModel):
     phone: str
     password: str = Field(..., min_length=6, description="User password")
 
+class ProfileUpdateRequest(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    city: Optional[str] = None
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(..., min_length=6, description="Current password")
+    new_password: str = Field(..., min_length=6, description="New password")
+
 class AuthResponse(BaseModel):
     success: bool
     message: str

@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
-from app.auth.models import PhoneRequest, SMSRequest, PasswordRequest, LoginRequest, AuthResponse
-from app.auth.service import register_user, authenticate_user, reset_password, verify_sms_code, generate_sms_code
+from fastapi import APIRouter, HTTPException, Header
+from app.auth.models import PhoneRequest, SMSRequest, PasswordRequest, LoginRequest, AuthResponse, ProfileUpdateRequest, PasswordChangeRequest
+from app.auth.service import register_user, authenticate_user, reset_password, verify_sms_code, generate_sms_code, update_user_profile, change_user_password, get_user_profile, get_current_user_from_token
 
 router = APIRouter()
 
@@ -41,12 +41,17 @@ async def login(request: LoginRequest):
     try:
         print(f"Login attempt for phone: {request.phone}")
         result = authenticate_user(request.phone, request.password)
+        print(f"Authentication result: {result}")
         if result:
+            print(f"Returning successful response with token: {result.get('token', 'No token')[:20] if result.get('token') else 'No token'}...")
             return AuthResponse(**result)
         else:
+            print("Authentication failed - no result returned")
             raise HTTPException(status_code=401, detail="Invalid credentials")
     except Exception as e:
         print(f"Login error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/reset-password", response_model=AuthResponse)
@@ -59,3 +64,93 @@ async def reset_password_endpoint(request: PasswordRequest):
     except ValueError as e:
         print(f"Password reset error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/profile", response_model=dict)
+async def get_profile(authorization: str = Header(None)):
+    """Получить профиль текущего пользователя"""
+    try:
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid authorization header")
+        
+        token = authorization.replace("Bearer ", "")
+        user = get_current_user_from_token(token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        user_id = user['id']
+        profile = get_user_profile(user_id)
+        return profile
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting profile: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/profile", response_model=dict)
+async def update_profile(
+    profile_data: ProfileUpdateRequest, 
+    authorization: str = Header(None)
+):
+    """Обновить профиль пользователя"""
+    try:
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid authorization header")
+        
+        token = authorization.replace("Bearer ", "")
+        user = get_current_user_from_token(token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        user_id = user['id']
+        
+        # Преобразуем Pydantic модель в словарь
+        profile_dict = profile_data.model_dump(exclude_unset=True)
+        
+        # Обновляем профиль
+        updated_profile = update_user_profile(user_id, profile_dict)
+        
+        return {
+            "success": True,
+            "message": "Profile updated successfully",
+            "profile": updated_profile
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating profile: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/change-password", response_model=AuthResponse)
+async def change_password(
+    password_data: PasswordChangeRequest,
+    authorization: str = Header(None)
+):
+    """Изменить пароль пользователя"""
+    try:
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid authorization header")
+        
+        token = authorization.replace("Bearer ", "")
+        user = get_current_user_from_token(token)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        user_id = user['id']
+        
+        # Изменяем пароль
+        change_user_password(user_id, password_data.current_password, password_data.new_password)
+        
+        return AuthResponse(
+            success=True,
+            message="Password changed successfully"
+        )
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error changing password: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

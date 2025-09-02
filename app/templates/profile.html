@@ -1,160 +1,219 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen bg-white">
-    <!-- Header with Role Selector -->
-    <div class="bg-white border-b border-gray-200">
-        <div class="max-w-md mx-auto px-4 py-4">
-            <div class="flex items-center justify-between mb-4">
-                <h1 class="text-lg font-semibold text-gray-900">Профиль</h1>
-                <button class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
-                    <i class="ri-settings-3-line text-gray-600 text-sm"></i>
-                </button>
-            </div>
-            
-            <!-- Role Selector -->
-            <div class="bg-gray-100 rounded-lg p-1">
-                <div class="flex">
-                    <button class="flex-1 py-2 px-4 text-sm font-medium text-gray-600 rounded-md">
-                        Заказчик
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-100">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <button onclick="window.goBack('/dashboard')" class="text-gray-500 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-arrow-left text-lg"></i>
                     </button>
-                    <button class="flex-1 py-2 px-4 text-sm font-medium bg-blue-500 text-white rounded-md">
-                        Исполнитель
-                    </button>
+                    <h1 class="text-xl font-bold text-gray-800">Профиль</h1>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- User Info Section -->
-    <div class="max-w-md mx-auto px-4 py-6">
-        <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-            <div class="flex items-center space-x-4">
-                <div class="w-16 h-16 border-2 border-gray-300 rounded-full flex items-center justify-center">
-                    <i class="ri-user-line text-gray-400 text-xl"></i>
-                </div>
-                <div class="flex-1">
-                    <div class="flex items-center space-x-2 mb-1">
-                        <h2 class="text-lg font-semibold text-gray-900" id="profileName">Рапа Петров</h2>
-                        <div class="w-4 h-4 border border-green-500 rounded-full flex items-center justify-center">
-                            <i class="ri-check-line text-green-500 text-xs"></i>
+    <div class="max-w-4xl mx-auto px-4 py-6">
+        <div x-data="profileTabs()" x-init="init()" class="space-y-6">
+            <!-- User Info Section -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="flex items-center space-x-4 mb-6">
+                    <div class="w-20 h-20 bg-gradient-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-3xl text-gray-500"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <h2 class="text-xl font-bold text-gray-800" id="profileName">Рапа Петров</h2>
+                            <div class="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-xs text-green-600"></i>
+                            </div>
                         </div>
+                        <p class="text-gray-600" id="profilePhone">79659943581</p>
                     </div>
-                    <p class="text-gray-600" id="profilePhone">79659943581</p>
+                </div>
+                
+                <!-- Role Selector -->
+                <div class="bg-gray-100 rounded-xl p-1">
+                    <div class="flex">
+                        <button 
+                            @click="activeTab = 'customer'" 
+                            :class="activeTab === 'customer' ? 'bg-blue-500 text-white' : 'text-gray-600'"
+                            class="flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300"
+                        >
+                            Заказчик
+                        </button>
+                        <button 
+                            @click="activeTab = 'performer'" 
+                            :class="activeTab === 'performer' ? 'bg-blue-500 text-white' : 'text-gray-600'"
+                            class="flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-300"
+                        >
+                            Исполнитель
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Tab Content -->
+            <div x-show="activeTab === 'customer'" x-transition class="space-y-3">
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                    <a href="/my-projects" @click="saveActiveTab()" class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-briefcase text-blue-600"></i>
+                        </div>
+                        <span class="font-medium text-gray-800">Мои проекты</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+
+                                    <a href="/notifications" @click="saveActiveTab()" class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-bell text-yellow-600"></i>
+                        </div>
+                        <span class="font-medium text-gray-800">Уведомления</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+
+                <a href="/support" @click="saveActiveTab()" class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-headset text-purple-600"></i>
+                        </div>
+                        <span class="font-medium text-gray-800">Тех поддержка</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+
+                    <button @click="logout()" class="w-full flex items-center justify-between p-4 hover:bg-red-50 transition-colors text-left">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-sign-out-alt text-red-600"></i>
+                            </div>
+                            <span class="font-medium text-red-600">Выйти</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Performer Tab Content -->
+            <div x-show="activeTab === 'performer'" x-transition class="space-y-3">
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                    <a href="/performer-settings" @click="saveActiveTab()" class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-cog text-green-600"></i>
+                        </div>
+                        <span class="font-medium text-gray-800">Настройки исполнителя</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+
+                <a href="/my-skills" @click="saveActiveTab()" class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-star text-indigo-600"></i>
+                        </div>
+                        <span class="font-medium text-gray-800">Мои навыки</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+
+                <a href="/my-responses" @click="saveActiveTab()" class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-reply text-blue-600"></i>
+                        </div>
+                        <span class="font-medium text-gray-800">Мои отклики</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+
+                <a href="/support" @click="saveActiveTab()" class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-headset text-purple-600"></i>
+                        </div>
+                        <span class="font-medium text-gray-800">Тех поддержка</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+
+                    <button @click="logout()" class="w-full flex items-center justify-between p-4 hover:bg-red-50 transition-colors text-left">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-sign-out-alt text-red-600"></i>
+                            </div>
+                            <span class="font-medium text-red-600">Выйти</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </button>
                 </div>
             </div>
         </div>
-
-        <!-- Menu Options -->
-        <div class="space-y-2">
-            <a href="/performer-settings" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div class="flex items-center space-x-3">
-                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
-                        <i class="ri-tools-line text-gray-600 text-sm"></i>
-                    </div>
-                    <span class="text-gray-900 font-medium">Настройки исполнителя</span>
-                </div>
-                <i class="ri-arrow-right-s-line text-gray-400 text-sm"></i>
-            </a>
-
-            <a href="/my-skills" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div class="flex items-center space-x-3">
-                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
-                        <i class="ri-flashlight-line text-gray-600 text-sm"></i>
-                    </div>
-                    <span class="text-gray-900 font-medium">Мои навыки</span>
-                </div>
-                <i class="ri-arrow-right-s-line text-gray-400 text-sm"></i>
-            </a>
-
-            <a href="/notifications" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div class="flex items-center space-x-3">
-                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
-                        <i class="ri-notification-3-line text-gray-600 text-sm"></i>
-                    </div>
-                    <span class="text-gray-900 font-medium">Уведомления</span>
-                </div>
-                <i class="ri-arrow-right-s-line text-gray-400 text-sm"></i>
-            </a>
-
-            <a href="/about" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div class="flex items-center space-x-3">
-                    <div class="w-6 h-6 border border-gray-400 rounded-full flex items-center justify-center">
-                        <i class="ri-information-line text-gray-600 text-xs"></i>
-                    </div>
-                    <span class="text-gray-900 font-medium">О приложении</span>
-                </div>
-                <i class="ri-arrow-right-s-line text-gray-400 text-sm"></i>
-            </a>
-
-            <a href="/support" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div class="flex items-center space-x-3">
-                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
-                        <i class="ri-customer-service-2-line text-gray-600 text-sm"></i>
-                    </div>
-                    <span class="text-gray-900 font-medium">Тех поддержка</span>
-                </div>
-                <i class="ri-arrow-right-s-line text-gray-400 text-sm"></i>
-            </a>
-
-            <button onclick="logout()" class="w-full flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-                <div class="flex items-center space-x-3">
-                    <div class="w-6 h-6 border border-red-500 rounded flex items-center justify-center">
-                        <i class="ri-logout-box-r-line text-red-500 text-sm"></i>
-                    </div>
-                    <span class="text-red-500 font-medium">Выйти</span>
-                </div>
-                <i class="ri-arrow-right-s-line text-gray-400 text-sm"></i>
-            </button>
-        </div>
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div class="max-w-md mx-auto">
-            <div class="flex justify-around items-center py-3">
-                <a href="/search" class="flex flex-col items-center space-y-1">
-                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
-                        <i class="ri-search-line text-gray-600 text-sm"></i>
-                    </div>
-                </a>
-                
-                <a href="/create-task" class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                    <i class="ri-add-line text-white text-lg"></i>
-                </a>
-                
-                <a href="/profile" class="flex flex-col items-center space-y-1">
-                    <div class="w-6 h-6 border border-gray-400 rounded flex items-center justify-center">
-                        <i class="ri-user-line text-gray-600 text-sm"></i>
-                    </div>
-                </a>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
+function profileTabs() {
+    return {
+        activeTab: 'customer',
+        
+        async init() {
+            await this.loadUserData();
+            this.loadActiveTab();
+        },
+        
+        async loadUserData() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                // Декодируем токен для получения информации о пользователе
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const userPhone = payload.sub;
+                
+                document.getElementById('profilePhone').textContent = userPhone;
+                
+                // Пытаемся получить дополнительную информацию из localStorage
+                const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                if (userData.name) {
+                    document.getElementById('profileName').textContent = userData.name;
+                }
+            } catch (error) {
+                                    console.error('Error loading user data:', error);
+                    window.location.href = '/login';
+                }
+            },
+
+            // Сохранение активного таба при переходах
+            saveActiveTab() {
+                localStorage.setItem('profile_active_tab', this.activeTab);
+            },
+
+            // Загрузка активного таба из localStorage
+            loadActiveTab() {
+                const savedTab = localStorage.getItem('profile_active_tab');
+                if (savedTab && (savedTab === 'customer' || savedTab === 'performer')) {
+                    this.activeTab = savedTab;
+                }
+            }
+        }
+    }
+
 function logout() {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     window.location.href = '/login';
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-        window.location.href = '/login';
-        return;
-    }
-
-    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-    
-    if (userData.name) {
-        document.getElementById('profileName').textContent = userData.name;
-    }
-    if (userData.phone) {
-        document.getElementById('profilePhone').textContent = userData.phone;
-    }
-});
 </script>
 {% endblock %}

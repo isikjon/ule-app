@@ -52,7 +52,7 @@ class TaskCreate(BaseModel):
     photos: Optional[List[str]] = []
 
 class TaskResponse(BaseModel):
-    id: str
+    id: str  # Оставляем str для совместимости с фронтендом
     service_category: ServiceCategory
     description: str
     address: str
@@ -73,13 +73,21 @@ class TaskUpdate(BaseModel):
     photos: Optional[List[str]] = None
 
 class ServiceOffer(BaseModel):
-    performer_phone: str
+    id: Optional[int] = None
+    performer_id: int
+    service_categories: List[ServiceCategory]
+    description: Optional[str] = None
+    hourly_rate: Optional[float] = None
+    created_at: Optional[datetime] = None
+
+class ServiceOfferCreate(BaseModel):
     service_categories: List[ServiceCategory]
     description: Optional[str] = None
     hourly_rate: Optional[float] = None
 
 class ProjectResponse(BaseModel):
-    task_id: str
+    id: int
+    task_id: str  # Оставляем str для совместимости
     performer_phone: str
     offer_price: float
     message: Optional[str] = None
@@ -87,14 +95,12 @@ class ProjectResponse(BaseModel):
     created_at: datetime
 
 class ProjectResponseCreate(BaseModel):
-    task_id: str
     offer_price: float
     message: Optional[str] = None
 
 class Notification(BaseModel):
-    id: str
+    id: int
     title: str
     message: str
-    type: str
+    is_read: bool = False
     created_at: datetime
-    read: bool = False

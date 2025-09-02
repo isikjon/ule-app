@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-100">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <button onclick="window.goBackToProfile('customer')" class="text-gray-500 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-arrow-left text-lg"></i>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-800">Мои проекты</h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="refreshProjects()" class="text-gray-500 hover:text-green-600 transition-colors">
+                        <i class="fas fa-sync-alt text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 py-6">
+        <div x-data="myProjects()" x-init="init()" class="space-y-6">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-briefcase text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Всего проектов</p>
+                            <p class="text-2xl font-bold text-gray-900" x-text="stats.total"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-green-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Активных</p>
+                            <p class="text-2xl font-bold text-gray-900" x-text="stats.active"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-check-circle text-purple-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Завершенных</p>
+                            <p class="text-2xl font-bold text-gray-900" x-text="stats.completed"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div x-show="loading" class="text-center py-12">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-4"></div>
+                <p class="text-gray-500">Загрузка проектов...</p>
+            </div>
+
+            <!-- Projects List -->
+            <div x-show="!loading" class="space-y-4">
+                <template x-for="project in filteredProjects" :key="project.id">
+                    <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full" x-text="getCategoryLabel(project.service_category)"></span>
+                                        <span :class="getStatusClass(project.status)" class="px-3 py-1 rounded-full text-sm font-medium" x-text="getStatusLabel(project.status)"></span>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-2" x-text="project.description"></h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-map-marker-alt w-4 text-green-500 mr-2"></i>
+                                            <span x-text="project.address"></span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-calendar w-4 text-blue-500 mr-2"></i>
+                                            <span x-text="formatDate(project.date)"></span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-ruble-sign w-4 text-purple-500 mr-2"></i>
+                                            <span x-text="project.price ? project.price + ' ₽' : 'По договоренности'"></span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-reply w-4 text-indigo-500 mr-2"></i>
+                                            <span x-text="(project.responses_count || 0) + ' откликов'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex space-x-3">
+                                <a :href="`/task/${project.id}`" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center">
+                                    <i class="fas fa-eye mr-2"></i>Просмотреть
+                                </a>
+                                <button @click="editProject(project)" class="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-edit mr-2"></i>Редактировать
+                                </button>
+                                <button @click="deleteProject(project)" class="bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Empty State -->
+                <div x-show="!loading && filteredProjects.length === 0" class="text-center py-12">
+                    <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-briefcase text-3xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-xl font-medium text-gray-500 mb-2">Проекты не найдены</h3>
+                    <p class="text-gray-400 mb-6">Создайте свой первый проект</p>
+                    <a href="/create-task" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Создать проект
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function myProjects() {
+    return {
+        loading: true,
+        projects: [],
+        activeFilter: 'all',
+        stats: {
+            total: 0,
+            active: 0,
+            completed: 0
+        },
+
+        get filteredProjects() {
+            if (this.activeFilter === 'all') {
+                return this.projects;
+            }
+            return this.projects.filter(project => project.status === this.activeFilter);
+        },
+
+        async init() {
+            await this.loadProjects();
+        },
+
+        async loadProjects() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const response = await fetch('/api/v1/tasks/tasks/my', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    this.projects = await response.json();
+                    this.calculateStats();
+                } else {
+                    console.error('Error loading projects:', response.status);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        calculateStats() {
+            this.stats.total = this.projects.length;
+            this.stats.active = this.projects.filter(p => p.status === 'open' || p.status === 'in_progress').length;
+            this.stats.completed = this.projects.filter(p => p.status === 'completed').length;
+        },
+
+        async refreshProjects() {
+            this.loading = true;
+            await this.loadProjects();
+        },
+
+        editProject(project) {
+            // Redirect to edit page (to be implemented)
+            alert('Функция редактирования будет доступна позже');
+        },
+
+        async deleteProject(project) {
+            if (!confirm('Вы уверены, что хотите удалить этот проект?')) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(`/api/v1/tasks/tasks/${project.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    await this.loadProjects();
+                } else {
+                    alert('Ошибка при удалении проекта');
+                }
+            } catch (error) {
+                console.error('Error deleting project:', error);
+                alert('Ошибка при удалении проекта');
+            }
+        },
+
+        getCategoryLabel(category) {
+            const labels = {
+                'movers': 'Грузчики',
+                'computer_help': 'Компьютеры',
+                'beauty_health': 'Красота',
+                'handyman': 'Мастер',
+                'household_help': 'Хозяйство',
+                'laborers': 'Разнорабочие',
+                'appliance_repair': 'Техника',
+                'construction': 'Строительство',
+                'tutoring': 'Обучение',
+                'plumbing': 'Сантехника',
+                'furniture': 'Мебель',
+                'cleaning': 'Уборка',
+                'electrical': 'Электрика',
+                'legal': 'Юридические',
+                'other': 'Другое'
+            };
+            return labels[category] || category;
+        },
+
+        getStatusClass(status) {
+            const classes = {
+                'open': 'bg-green-100 text-green-700',
+                'in_progress': 'bg-blue-100 text-blue-700',
+                'completed': 'bg-gray-100 text-gray-700',
+                'cancelled': 'bg-red-100 text-red-700'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        },
+
+        getStatusLabel(status) {
+            const labels = {
+                'open': 'Открыт',
+                'in_progress': 'В работе',
+                'completed': 'Завершен',
+                'cancelled': 'Отменен'
+            };
+            return labels[status] || status;
+        },
+
+        formatDate(dateString) {
+            if (!dateString) return 'Не указано';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('ru-RU');
+            } catch (error) {
+                return dateString;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

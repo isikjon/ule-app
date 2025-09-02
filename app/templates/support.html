@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-100">
+        <div class="max-w-6xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <button onclick="window.goBackToProfile('customer')" class="text-gray-500 hover:text-gray-700 transition-colors">
+                        <i class="fas fa-arrow-left text-lg"></i>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-800">Техническая поддержка</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 py-6">
+        <div x-data="supportPage()" x-init="init()" class="space-y-6">
+            <!-- Contact Information -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">Связаться с нами</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Phone Support -->
+                    <div class="flex items-center space-x-4 p-4 bg-green-50 rounded-xl">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-phone text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Телефон поддержки</h3>
+                            <p class="text-green-600 font-medium">+7 (999) 123-45-67</p>
+                            <p class="text-sm text-gray-600">Ежедневно с 9:00 до 21:00</p>
+                        </div>
+                    </div>
+
+                    <!-- Email Support -->
+                    <div class="flex items-center space-x-4 p-4 bg-blue-50 rounded-xl">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-envelope text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Email поддержка</h3>
+                            <p class="text-blue-600 font-medium">support@ule.com</p>
+                            <p class="text-sm text-gray-600">Ответ в течение 24 часов</p>
+                        </div>
+                    </div>
+
+                    <!-- Telegram Support -->
+                    <div class="flex items-center space-x-4 p-4 bg-purple-50 rounded-xl">
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fab fa-telegram text-purple-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Telegram</h3>
+                            <p class="text-purple-600 font-medium">@ule_support</p>
+                            <p class="text-sm text-gray-600">Быстрые ответы в чате</p>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Support -->
+                    <div class="flex items-center space-x-4 p-4 bg-green-50 rounded-xl">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fab fa-whatsapp text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">WhatsApp</h3>
+                            <p class="text-green-600 font-medium">+7 (999) 123-45-67</p>
+                            <p class="text-sm text-gray-600">Онлайн консультации</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">Часто задаваемые вопросы</h2>
+                
+                <div class="space-y-4">
+                    <template x-for="(faq, index) in faqs" :key="index">
+                        <div class="border border-gray-200 rounded-xl overflow-hidden">
+                            <button
+                                @click="faq.open = !faq.open"
+                                class="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                            >
+                                <span class="font-medium text-gray-800" x-text="faq.question"></span>
+                                <i :class="faq.open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-gray-400 transition-transform duration-200"></i>
+                            </button>
+                            <div x-show="faq.open" x-transition class="p-4 bg-white">
+                                <p class="text-gray-600" x-text="faq.answer"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Support Request Form -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">Отправить обращение</h2>
+                
+                <form @submit.prevent="submitSupportRequest" class="space-y-6">
+                    <!-- Subject -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Тема обращения
+                        </label>
+                        <select
+                            x-model="supportRequest.subject"
+                            required
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
+                        >
+                            <option value="">Выберите тему</option>
+                            <option value="technical_issue">Техническая проблема</option>
+                            <option value="account_issue">Проблема с аккаунтом</option>
+                            <option value="payment_issue">Проблема с оплатой</option>
+                            <option value="task_issue">Проблема с задачей</option>
+                            <option value="feature_request">Предложение по улучшению</option>
+                            <option value="complaint">Жалоба</option>
+                            <option value="other">Другое</option>
+                        </select>
+                    </div>
+
+                    <!-- Priority -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Приоритет
+                        </label>
+                        <div class="flex space-x-3">
+                            <label class="flex items-center">
+                                <input x-model="supportRequest.priority" type="radio" value="low" class="text-green-600">
+                                <span class="ml-2 text-sm text-gray-700">Низкий</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input x-model="supportRequest.priority" type="radio" value="medium" class="text-yellow-600">
+                                <span class="ml-2 text-sm text-gray-700">Средний</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input x-model="supportRequest.priority" type="radio" value="high" class="text-red-600">
+                                <span class="ml-2 text-sm text-gray-700">Высокий</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Message -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Описание проблемы
+                        </label>
+                        <textarea
+                            x-model="supportRequest.message"
+                            rows="6"
+                            required
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 resize-none"
+                            placeholder="Опишите подробно вашу проблему или вопрос..."
+                        ></textarea>
+                        <p class="text-sm text-gray-500 mt-1">Чем подробнее описание, тем быстрее мы сможем помочь</p>
+                    </div>
+
+                    <!-- Contact Info -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Ваш телефон
+                            </label>
+                            <input
+                                x-model="supportRequest.phone"
+                                type="tel"
+                                readonly
+                                class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-600"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Email для ответа
+                            </label>
+                            <input
+                                x-model="supportRequest.email"
+                                type="email"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
+                                placeholder="Введите email"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex space-x-4">
+                        <button
+                            type="submit"
+                            :disabled="submitting"
+                            class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        >
+                            <span x-show="!submitting">
+                                <i class="fas fa-paper-plane mr-2"></i>Отправить обращение
+                            </span>
+                            <span x-show="submitting">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Отправка...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Success Message -->
+            <div x-show="requestSent" x-transition class="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-2xl text-green-600"></i>
+                </div>
+                <h3 class="text-lg font-medium text-green-800 mb-2">Обращение отправлено!</h3>
+                <p class="text-green-600">Мы свяжемся с вами в ближайшее время. Номер вашего обращения: <span class="font-mono font-bold">#12345</span></p>
+            </div>
+
+            <!-- App Info -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">О приложении</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">Версия приложения</h3>
+                        <p class="text-gray-600">1.0.0 (Build 100)</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">Последнее обновление</h3>
+                        <p class="text-gray-600">15 января 2025</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">Разработчик</h3>
+                        <p class="text-gray-600">ULE Team</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">Политика конфиденциальности</h3>
+                        <a href="/privacy" class="text-blue-600 hover:text-blue-700">Читать документ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function supportPage() {
+    return {
+        submitting: false,
+        requestSent: false,
+        supportRequest: {
+            subject: '',
+            priority: 'medium',
+            message: '',
+            phone: '',
+            email: ''
+        },
+        faqs: [
+            {
+                question: "Как создать задачу?",
+                answer: "Нажмите кнопку '+' в нижней части экрана, выберите категорию услуги, заполните описание, укажите адрес и дату выполнения.",
+                open: false
+            },
+            {
+                question: "Как откликнуться на задачу?",
+                answer: "Найдите подходящую задачу в разделе 'Поиск', откройте её и нажмите 'Откликнуться'. Укажите свою цену и оставьте сообщение.",
+                open: false
+            },
+            {
+                question: "Как получить оплату за выполненную работу?",
+                answer: "После завершения задачи заказчик подтверждает выполнение. Деньги поступят на ваш счет в течение 1-3 рабочих дней.",
+                open: false
+            },
+            {
+                question: "Что делать, если возникла проблема с заказчиком?",
+                answer: "Обратитесь в техническую поддержку через это приложение или по телефону. Мы поможем решить спорную ситуацию.",
+                open: false
+            },
+            {
+                question: "Как изменить свои навыки и специализацию?",
+                answer: "Перейдите в 'Профиль' → 'Исполнитель' → 'Мои навыки' и отредактируйте список ваших услуг.",
+                open: false
+            },
+            {
+                question: "Можно ли отменить задачу после создания?",
+                answer: "Да, вы можете отменить задачу в разделе 'Мои проекты', если на неё ещё никто не откликнулся.",
+                open: false
+            },
+            {
+                question: "Как работает рейтинг исполнителей?",
+                answer: "Рейтинг формируется на основе отзывов заказчиков и качества выполненных работ. Чем выше рейтинг, тем больше доверия.",
+                open: false
+            },
+            {
+                question: "Есть ли комиссия за использование сервиса?",
+                answer: "Да, мы берем небольшую комиссию с каждой успешно завершенной сделки. Подробности в пользовательском соглашении.",
+                open: false
+            }
+        ],
+
+        async init() {
+            await this.loadUserData();
+        },
+
+        async loadUserData() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (token) {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    this.supportRequest.phone = payload.sub;
+                }
+
+                const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                if (userData.email) {
+                    this.supportRequest.email = userData.email;
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        },
+
+        async submitSupportRequest() {
+            try {
+                this.submitting = true;
+                
+                // Имитируем отправку запроса
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Очищаем форму
+                this.supportRequest = {
+                    subject: '',
+                    priority: 'medium',
+                    message: '',
+                    phone: this.supportRequest.phone,
+                    email: this.supportRequest.email
+                };
+                
+                this.requestSent = true;
+                setTimeout(() => {
+                    this.requestSent = false;
+                }, 5000);
+                
+            } catch (error) {
+                console.error('Error submitting support request:', error);
+                alert('Ошибка при отправке обращения');
+            } finally {
+                this.submitting = false;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -7,7 +7,7 @@
         <div class="max-w-6xl mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <button @click="window.history.back()" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <button onclick="window.goBack()" class="text-gray-500 hover:text-gray-700 transition-colors">
                         <i class="fas fa-arrow-left text-lg"></i>
                     </button>
                     <h1 class="text-xl font-bold text-gray-800">Отклик на задачу</h1>
@@ -31,36 +31,36 @@
                 <!-- Task Info -->
                 <div x-show="!loading && task" class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full" x-text="getCategoryLabel(task.service_category)"></span>
-                        <span class="text-lg font-bold text-gray-800" x-text="task.price ? task.price + ' ₽' : 'По договоренности'"></span>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full" x-text="task ? getCategoryLabel(task.service_category) : 'Неизвестно'"></span>
+                        <span class="text-lg font-bold text-gray-800" x-text="task && task.price ? task.price + ' ₽' : 'По договоренности'"></span>
                     </div>
                     
-                    <h3 class="text-lg font-semibold text-gray-800" x-text="task.description"></h3>
+                    <h3 class="text-lg font-semibold text-gray-800" x-text="task ? task.description : 'Описание не указано'"></h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
                         <div class="flex items-center">
                             <i class="fas fa-map-marker-alt w-4 text-green-500 mr-3"></i>
-                            <span x-text="task.address"></span>
+                            <span x-text="task ? task.address : 'Адрес не указан'"></span>
                         </div>
                         <div class="flex items-center">
                             <i class="fas fa-calendar w-4 text-blue-500 mr-3"></i>
-                            <span x-text="formatDate(task.date)"></span>
+                            <span x-text="task ? formatDate(task.date) : 'Дата не указана'"></span>
                         </div>
                         <div class="flex items-center">
                             <i class="fas fa-comments w-4 text-purple-500 mr-3"></i>
-                            <span x-text="task.responses_count + ' откликов'"></span>
+                            <span x-text="task ? (task.responses_count || 0) + ' откликов' : '0 откликов'"></span>
                         </div>
                         <div class="flex items-center">
                             <i class="fas fa-clock w-4 text-indigo-500 mr-3"></i>
-                            <span x-text="formatDate(task.created_at)"></span>
+                            <span x-text="task ? formatDate(task.created_at) : 'Неизвестно'"></span>
                         </div>
                     </div>
 
                     <!-- Task Photos -->
-                    <div x-show="task.photos && task.photos.length > 0" class="space-y-3">
+                    <div x-show="task && task.photos && task.photos.length > 0" class="space-y-3">
                         <h4 class="font-medium text-gray-700">Фотографии:</h4>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <template x-for="(photo, index) in task.photos" :key="index">
+                            <template x-for="(photo, index) in (task && task.photos ? task.photos : [])" :key="index">
                                 <img :src="photo" :alt="'Фото ' + (index + 1)" class="w-full h-32 object-cover rounded-lg">
                             </template>
                         </div>
@@ -78,7 +78,7 @@
             </div>
 
             <!-- Response Form -->
-            <div x-show="!loading && task" class="bg-white rounded-2xl shadow-lg p-6">
+            <div x-show="!loading && task && !isOwnTask()" class="bg-white rounded-2xl shadow-lg p-6">
                 <h2 class="text-xl font-semibold text-gray-800 mb-6">Ваше предложение</h2>
                 
                 <form @submit.prevent="submitResponse" class="space-y-6">
@@ -135,7 +135,7 @@
                         
                         <button
                             type="button"
-                            @click="window.history.back()"
+                            onclick="window.goBack()"
                             class="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all duration-300"
                         >
                             Отмена
@@ -144,6 +144,18 @@
                 </form>
             </div>
 
+            <!-- Error Message for Own Task -->
+            <div x-show="!loading && task && isOwnTask()" class="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
+                </div>
+                <h3 class="text-lg font-medium text-red-800 mb-2">Нельзя откликнуться на свою задачу</h3>
+                <p class="text-red-600 mb-4">Это ваша собственная задача. Вы можете посмотреть отклики других пользователей.</p>
+                <button @click="window.location.href=`/task/${getTaskIdFromUrl()}`" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    Перейти к задаче
+                </button>
+            </div>
+            
             <!-- Success Message -->
             <div x-show="success" class="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
                 <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -166,13 +178,38 @@ function respondToTask() {
         submitting: false,
         success: false,
         task: null,
+        currentUser: null,
         responseData: {
             offer_price: '',
             message: ''
         },
 
         async init() {
+            await this.loadCurrentUser();
             await this.loadTask();
+        },
+        
+        async loadCurrentUser() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                // Декодируем токен для получения информации о пользователе
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                this.currentUser = { phone: payload.sub };
+                console.log('Current user:', this.currentUser);
+            } catch (error) {
+                console.error('Error loading current user:', error);
+                window.location.href = '/login';
+            }
+        },
+        
+        isOwnTask() {
+            return this.task && this.currentUser && 
+                   this.task.customer_phone === this.currentUser.phone;
         },
 
         async loadTask() {
@@ -196,9 +233,47 @@ function respondToTask() {
                 });
 
                 if (response.ok) {
-                    this.task = await response.json();
+                    const taskData = await response.json();
+                    console.log('Task data received:', taskData);
+                    
+                    // Убеждаемся, что photos всегда является массивом
+                    if (!taskData.photos || !Array.isArray(taskData.photos)) {
+                        taskData.photos = [];
+                    }
+                    
+                    this.task = taskData;
+                    console.log('Task loaded with safe photos:', this.task);
+                    
+                    // Проверяем, не пытается ли пользователь откликнуться на свою задачу
+                    if (this.isOwnTask()) {
+                        alert('Вы не можете откликнуться на свою собственную задачу');
+                        window.location.href = `/task/${this.getTaskIdFromUrl()}`;
+                        return;
+                    }
                 } else {
-                    console.error('Error loading task');
+                    const errorText = await response.text();
+                    console.error('Error loading task:', response.status, errorText);
+                    // Попробуем без авторизации (для совместимости)
+                    const fallbackResponse = await fetch(`/api/v1/tasks/tasks/${taskId}`);
+                    if (fallbackResponse.ok) {
+                        const taskData = await fallbackResponse.json();
+                        console.log('Task data received via fallback:', taskData);
+                        
+                        // Убеждаемся, что photos всегда является массивом
+                        if (!taskData.photos || !Array.isArray(taskData.photos)) {
+                            taskData.photos = [];
+                        }
+                        
+                        this.task = taskData;
+                        console.log('Task loaded via fallback with safe photos:', this.task);
+                        
+                        // Проверяем, не пытается ли пользователь откликнуться на свою задачу
+                        if (this.isOwnTask()) {
+                            alert('Вы не можете откликнуться на свою собственную задачу');
+                            window.location.href = `/task/${this.getTaskIdFromUrl()}`;
+                            return;
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -273,10 +348,34 @@ function respondToTask() {
             };
             return labels[category] || category;
         },
-
+        
         formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('ru-RU');
+            if (!dateString) return 'Не указано';
+            try {
+                // Пробуем разные форматы даты
+                let date;
+                if (dateString.includes('-')) {
+                    // ISO формат: 2025-09-02
+                    date = new Date(dateString);
+                } else if (dateString.includes('.')) {
+                    // Русский формат: 02.09.2025
+                    const parts = dateString.split('.');
+                    if (parts.length === 3) {
+                        date = new Date(parts[2], parts[1] - 1, parts[0]);
+                    }
+                } else {
+                    date = new Date(dateString);
+                }
+                
+                if (isNaN(date.getTime())) {
+                    return dateString; // Возвращаем как есть, если не удалось распарсить
+                }
+                
+                return date.toLocaleDateString('ru-RU');
+            } catch (error) {
+                console.error('Error formatting date:', dateString, error);
+                return dateString;
+            }
         }
     }
 }

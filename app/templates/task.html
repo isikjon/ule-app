@@ -7,7 +7,7 @@
         <div class="max-w-6xl mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <button @click="window.history.back()" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <button onclick="window.goBack()" class="text-gray-500 hover:text-gray-700 transition-colors">
                         <i class="fas fa-arrow-left text-lg"></i>
                     </button>
                     <h1 class="text-xl font-bold text-gray-800">Просмотр задачи</h1>
@@ -32,19 +32,19 @@
                 </div>
 
                 <!-- Task Content -->
-                <div x-show="!loading && task" class="space-y-0">
+                <div x-show="!loading && task" x-data="{ taskSafe: task || {} }" class="space-y-0">
                     <!-- Task Photos -->
-                    <div x-show="task.photos && task.photos.length > 0" class="relative">
+                    <div x-show="hasPhotos()" class="relative">
                         <div class="h-64 bg-gradient-to-br from-green-100 to-blue-100">
-                            <img :src="task.photos[0]" :alt="'Фото задачи'" class="w-full h-full object-cover">
+                            <img :src="getFirstPhoto()" :alt="'Фото задачи'" class="w-full h-full object-cover">
                         </div>
-                        <div x-show="task.photos.length > 1" class="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                        <div x-show="getPhotosCount() > 1" class="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
                             <i class="fas fa-images mr-1"></i>
-                            <span x-text="task.photos.length + ' фото'"></span>
+                            <span x-text="getPhotosCount() + ' фото'"></span>
                         </div>
                     </div>
                     
-                    <div x-show="!task.photos || task.photos.length === 0" class="h-48 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
+                    <div x-show="!hasPhotos()" class="h-48 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
                         <i class="fas fa-image text-6xl text-gray-300"></i>
                     </div>
 
@@ -53,14 +53,14 @@
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-3 mb-3">
-                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full" x-text="getCategoryLabel(task.service_category)"></span>
-                                    <span :class="getStatusClass(task.status)" class="px-3 py-1 rounded-full text-xs font-medium" x-text="getStatusLabel(task.status)"></span>
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full" x-text="task ? getCategoryLabel(task.service_category) : 'Неизвестно'"></span>
+                                    <span :class="task ? getStatusClass(task.status) : 'bg-gray-100 text-gray-700'" class="px-3 py-1 rounded-full text-xs font-medium" x-text="task ? getStatusLabel(task.status) : 'Неизвестно'"></span>
                                 </div>
-                                <h2 class="text-2xl font-bold text-gray-800 mb-3" x-text="task.description"></h2>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-3" x-text="task ? task.description : 'Описание не указано'"></h2>
                             </div>
                             <div class="text-right">
-                                <div class="text-3xl font-bold text-green-600" x-text="task.price ? task.price + ' ₽' : 'По договоренности'"></div>
-                                <div class="text-sm text-gray-500 mt-1" x-text="task.responses_count + ' откликов'"></div>
+                                <div class="text-3xl font-bold text-green-600" x-text="task && task.price ? task.price + ' ₽' : 'По договоренности'"></div>
+                                <div class="text-sm text-gray-500 mt-1" x-text="task ? (task.responses_count || 0) + ' откликов' : '0 откликов'"></div>
                             </div>
                         </div>
 
@@ -73,7 +73,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm text-gray-500">Адрес</p>
-                                        <p class="font-medium text-gray-800" x-text="task.address"></p>
+                                        <p class="font-medium text-gray-800" x-text="task ? task.address : 'Адрес не указан'"></p>
                                     </div>
                                 </div>
                                 
@@ -83,7 +83,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm text-gray-500">Дата выполнения</p>
-                                        <p class="font-medium text-gray-800" x-text="formatDate(task.date)"></p>
+                                        <p class="font-medium text-gray-800" x-text="task ? formatDate(task.date) : 'Дата не указана'"></p>
                                     </div>
                                 </div>
                             </div>
@@ -95,7 +95,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm text-gray-500">Размещено</p>
-                                        <p class="font-medium text-gray-800" x-text="formatDate(task.created_at)"></p>
+                                        <p class="font-medium text-gray-800" x-text="task ? formatDate(task.created_at) : 'Неизвестно'"></p>
                                     </div>
                                 </div>
                                 
@@ -105,7 +105,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm text-gray-500">Заказчик</p>
-                                        <p class="font-medium text-gray-800" x-text="maskPhone(task.customer_phone)"></p>
+                                        <p class="font-medium text-gray-800" x-text="task ? maskPhone(task.customer_phone) : 'Неизвестно'"></p>
                                     </div>
                                 </div>
                             </div>
@@ -113,12 +113,15 @@
 
                         <!-- Action Buttons -->
                         <div class="flex space-x-4">
-                            <button @click="respondToTask()" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105">
+                            <!-- Кнопка отклика только для чужих задач -->
+                            <button x-show="!isOwnTask()" @click="respondToTask()" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105">
                                 <i class="fas fa-reply mr-2"></i>Откликнуться
                             </button>
-                            <button @click="shareTask()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all duration-300">
-                                <i class="fas fa-share mr-2"></i>Поделиться
-                            </button>
+                            
+                            <!-- Сообщение для собственных задач -->
+                            <div x-show="isOwnTask()" class="flex-1 bg-gray-100 text-gray-600 py-3 px-6 rounded-xl font-medium text-center">
+                                <i class="fas fa-user mr-2"></i>Это ваша задача
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -182,12 +185,54 @@ function taskView() {
         loadingResponses: false,
         task: null,
         responses: [],
+        currentUser: null,
+        
+        // Метод для безопасного обращения к photos
+        getPhotos() {
+            return this.task && this.task.photos ? this.task.photos : [];
+        },
+        
+        hasPhotos() {
+            const photos = this.getPhotos();
+            return photos.length > 0;
+        },
+        
+        getFirstPhoto() {
+            const photos = this.getPhotos();
+            // Если фото нет, используем data:image URL для placeholder
+            return photos.length > 0 ? photos[0] : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzllYTNhOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPtCd0LXRgiDRhNC+0YLQvjwvdGV4dD48L3N2Zz4=';
+        },
+        
+        getPhotosCount() {
+            const photos = this.getPhotos();
+            return photos.length;
+        },
 
         async init() {
+            await this.loadCurrentUser();
             await this.loadTask();
             if (this.task) {
                 await this.loadResponses();
             }
+        },
+        
+        async loadCurrentUser() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) return;
+                
+                // Декодируем токен для получения информации о пользователе
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                this.currentUser = { phone: payload.sub };
+                console.log('Current user:', this.currentUser);
+            } catch (error) {
+                console.error('Error loading current user:', error);
+            }
+        },
+        
+        isOwnTask() {
+            return this.task && this.currentUser && 
+                   this.task.customer_phone === this.currentUser.phone;
         },
 
         async loadTask() {
@@ -204,16 +249,44 @@ function taskView() {
                     return;
                 }
 
+                console.log('Loading task with ID:', taskId);
                 const response = await fetch(`/api/v1/tasks/tasks/${taskId}`, {
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
                 });
+                
+                console.log('Task API response status:', response.status);
 
                 if (response.ok) {
-                    this.task = await response.json();
+                    const taskData = await response.json();
+                    console.log('Task data received:', taskData);
+                    
+                    // Убеждаемся, что photos всегда является массивом
+                    if (!taskData.photos || !Array.isArray(taskData.photos)) {
+                        taskData.photos = [];
+                    }
+                    
+                    this.task = taskData;
+                    console.log('Task loaded with safe photos:', this.task);
                 } else {
-                    console.error('Error loading task');
+                    const errorText = await response.text();
+                    console.error('Error loading task:', response.status, errorText);
+                    // Попробуем без авторизации (для совместимости)
+                    const fallbackResponse = await fetch(`/api/v1/tasks/tasks/${taskId}`);
+                    if (fallbackResponse.ok) {
+                        const taskData = await fallbackResponse.json();
+                        console.log('Task data received via fallback:', taskData);
+                        
+                        // Убеждаемся, что photos всегда является массивом
+                        if (!taskData.photos || !Array.isArray(taskData.photos)) {
+                            taskData.photos = [];
+                        }
+                        
+                        this.task = taskData;
+                        console.log('Task loaded via fallback with safe photos:', this.task);
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -228,14 +301,23 @@ function taskView() {
                 const taskId = this.getTaskIdFromUrl();
                 const token = localStorage.getItem('auth_token');
 
+                console.log('Loading responses for task:', taskId);
                 const response = await fetch(`/api/v1/tasks/tasks/${taskId}/responses`, {
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
                 });
+                
+                console.log('Responses API response status:', response.status);
 
                 if (response.ok) {
                     this.responses = await response.json();
+                    console.log('Responses loaded:', this.responses);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Error loading responses:', response.status, errorText);
+                    this.responses = [];
                 }
             } catch (error) {
                 console.error('Error loading responses:', error);
@@ -334,13 +416,37 @@ function taskView() {
         },
 
         formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('ru-RU');
+            if (!dateString) return 'Не указано';
+            try {
+                // Пробуем разные форматы даты
+                let date;
+                if (dateString.includes('-')) {
+                    // ISO формат: 2025-09-02
+                    date = new Date(dateString);
+                } else if (dateString.includes('.')) {
+                    // Русский формат: 02.09.2025
+                    const parts = dateString.split('.');
+                    if (parts.length === 3) {
+                        date = new Date(parts[2], parts[1] - 1, parts[0]);
+                    }
+                } else {
+                    date = new Date(dateString);
+                }
+                
+                if (isNaN(date.getTime())) {
+                    return dateString; // Возвращаем как есть, если не удалось распарсить
+                }
+                
+                return date.toLocaleDateString('ru-RU');
+            } catch (error) {
+                console.error('Error formatting date:', dateString, error);
+                return dateString;
+            }
         },
-
+        
         maskPhone(phone) {
             if (!phone) return '';
-            return phone.replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3-$4-$5');
+            return phone.replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 ($2) $3-$4-$5');
         }
     }
 }

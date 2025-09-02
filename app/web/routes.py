@@ -21,10 +21,6 @@ async def reset_password_page(request: Request):
 async def dashboard_page(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
-@router.get("/edit-profile", response_class=HTMLResponse)
-async def edit_profile_page(request: Request):
-    return templates.TemplateResponse("edit_profile.html", {"request": request})
-
 @router.get("/create-task", response_class=HTMLResponse)
 async def create_task_page(request: Request):
     return templates.TemplateResponse("create_task.html", {"request": request})
@@ -45,7 +41,7 @@ async def search_page(request: Request):
 async def my_responses_page(request: Request):
     return templates.TemplateResponse("my_responses.html", {"request": request})
 
-@router.get("/profile", response_class=HTMLResponse)
+@router.get("/profile", response_class=HTMLResponse)  
 async def profile_page(request: Request):
     return templates.TemplateResponse("profile.html", {"request": request})
 
@@ -56,3 +52,15 @@ async def respond_page(request: Request, task_id: str):
 @router.get("/task/{task_id}", response_class=HTMLResponse)
 async def task_page(request: Request, task_id: str):
     return templates.TemplateResponse("task.html", {"request": request})
+
+@router.get("/my-projects", response_class=HTMLResponse)
+async def my_projects_page(request: Request):
+    return templates.TemplateResponse("my_projects.html", {"request": request})
+
+@router.get("/performer-settings", response_class=HTMLResponse)
+async def performer_settings_page(request: Request):
+    return templates.TemplateResponse("performer_settings.html", {"request": request})
+
+@router.get("/support", response_class=HTMLResponse)
+async def support_page(request: Request):
+    return templates.TemplateResponse("support.html", {"request": request})
